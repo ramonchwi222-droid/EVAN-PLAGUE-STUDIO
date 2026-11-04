@@ -33,7 +33,7 @@ aside{width:340px;background:var(--pn);border-left:1px solid var(--bd);display:f
 <aside><div id="tl"></div><div id="insp"><span>X</span><input id="sx" type="range" min="-1" max="1" step=".01"><span>Altura</span><input id="sy" type="range" min="0" max="1" step=".01"><span>Z</span><input id="sz" type="range" min="-1" max="1" step=".01">
 <div class="row"><button id="rec" class="rec">● Grabar automación</button><button id="clr">Borrar auto.</button></div></div></aside></main>
 <footer><button id="pp" class="pri">▶</button><button id="st">■</button><span id="tm">0:00.00 / 0:00.00</span><input id="sk" type="range" min="0" max="1000" value="0"><div id="mm"><u></u></div>
-<button id="hand">✋ Mano</button><select id="ax"><option value="y">↑↓ = Altura</option><option value="z">↑↓ = Profundidad</option></select><button id="ex" class="pri">⬇ Descargar mezcla</button></footer><div id="exp"><b>Descargar mezcla</b><button id="e1">WAV 24-bit/48 kHz + metadata <small>(.zip, máxima calidad)</small></button><button id="e2">Audio reproducible <small>(.webm Opus, se graba en tiempo real)</small></button><button id="e3">Solo metadata de objetos <small>(.json)</small></button></div>
+<button id="hand">✋ Mano</button><select id="ax"><option value="y">↑↓ = Altura</option><option value="z">↑↓ = Profundidad</option></select><button id="ex" class="pri">⬇ Descargar mezcla</button></footer><div id="exp"><b>Descargar mezcla (Carpeta: MIS MEZCLAS)</b><button id="e1">WAV 24-bit/48 kHz + metadata <small>(.zip, máxima calidad)</small></button><button id="e2">Audio reproducible <small>(.webm Opus, se graba en tiempo real)</small></button><button id="e3">Solo metadata de objetos <small>(.json)</small></button></div>
 <div id="ts"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -124,7 +124,7 @@ t.mesh.scale.setScalar(1+l*.7);t.mesh.material.emissiveIntensity=t===sel?.9:.25+
 let p=0;if(an&&playing){an.getByteTimeDomainData(tb);for(let i=0;i<512;i++)p=Math.max(p,Math.abs(tb[i]-128));}$('#mm u').style.width=Math.min(100,p/1.2)+'%';
 $('#hud').textContent=(handOn?'✋ mano detectada · ':'')+'Arrastra esferas · fondo = orbitar · pellizca/rueda = zoom · Cubos azules = altavoces 7.1.4 (violeta = altura)';R.render(sc,cm)}
 loop();renderTL();ui();size();
-/* ---------- exportación ---------- */
+/* ---------- exportación nativa directa ---------- */
 function wav(b){const n=b.length,o=new DataView(new ArrayBuffer(44+n*6)),w=(p,s)=>[...s].forEach((c,i)=>o.setUint8(p+i,c.charCodeAt(0)));w(0,'RIFF');o.setUint32(4,36+n*6,true);w(8,'WAVEfmt ');o.setUint32(16,16,true);o.setUint16(20,1,true);o.setUint16(22,2,true);o.setUint32(24,b.sampleRate,true);o.setUint32(28,b.sampleRate*6,true);o.setUint16(32,6,true);o.setUint16(34,24,true);w(36,'data');o.setUint32(40,n*6,true);
 const c=[b.getChannelData(0),b.getChannelData(1)];let q=44;for(let i=0;i<n;i++)for(let k=0;k<2;k++){const v=Math.round(cl(c[k][i])*8388607);o.setUint8(q++,v&255);o.setUint8(q++,(v>>8)&255);o.setUint8(q++,(v>>16)&255)}return new Uint8Array(o.buffer)}
 function crc(u){const t=crc.t||(crc.t=Array.from({length:256},(_,n)=>{let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;return c>>>0}));let r=-1;for(let i=0;i<u.length;i++)r=(r>>>8)^t[(r^u[i])&255];return(r^-1)>>>0}
@@ -132,8 +132,21 @@ function zip(fs){const P=[],C=[],e=new TextEncoder();let off=0;for(const f of fs
 h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x800,true);h.setUint32(14,k,true);h.setUint32(18,z,true);h.setUint32(22,z,true);h.setUint16(26,nm.length,true);P.push(h,nm,f.data);
 c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x800,true);c.setUint32(16,k,true);c.setUint32(20,z,true);c.setUint32(24,z,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);C.push(c,nm);off+=30+nm.length+z}
 let L=0;C.forEach(x=>L+=x.byteLength);const E=new DataView(new ArrayBuffer(22));E.setUint32(0,0x06054b50,true);E.setUint16(8,fs.length,true);E.setUint16(10,fs.length,true);E.setUint32(12,L,true);E.setUint32(16,off,true);return new Blob([...P,...C,E])}
-const fail=e=>toast(e&&e.code==='declined'?'Descarga cancelada.':'Error al exportar: '+(e&&e.message||e));
-async function dlg(){const d=window.claude?await claude.use('downloads'):null;if(!d)toast('La descarga no está disponible en esta vista.');return d}
+const fail=e=>toast('Error al exportar: '+(e&&e.message||e));
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'MIS_MEZCLAS_' + filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 1000);
+}
+
 async function renderMix(){const sr=48000,oc=new OfflineAudioContext(2,Math.ceil(dur()*sr),sr),m=oc.createGain();m.gain.value=.9;m.connect(oc.destination);
 T.forEach(t=>{const s=oc.createBufferSource(),g=oc.createGain(),p=mkP(oc);s.buffer=t.buf;g.gain.value=aud(t)?t.v:0;const a=t.auto;setP(p,a.length?a[0][1]:t.x,a.length?a[0][2]:t.y,a.length?a[0][3]:t.z);
 if(p.positionX)a.forEach(k=>{p.positionX.setValueAtTime(k[1]*SC,k[0]);p.positionY.setValueAtTime(k[2]*H,k[0]);p.positionZ.setValueAtTime(k[3]*SC,k[0])});s.connect(g);g.connect(p);p.connect(m);s.start()});
@@ -141,10 +154,50 @@ const r=await oc.startRendering();let pk=0;for(let c=0;c<2;c++){const d=r.getCha
 const metaObj=()=>({generador:'Atmos Studio',nota:'Metadata de objetos estilo ADM (no es un master Dolby Atmos certificado). Úsala para reconstruir la mezcla en un DAW o en el Dolby Atmos Renderer.',ejes:'x derecha, y arriba, z atrás (frente = -z); metros: x,z ±5, altura 0–4',monitorizacion:'7.1.4 / binaural HRTF',sampleRate:48000,bits:24,objetos:T.map((t,i)=>({id:i+1,nombre:t.name,ganancia:t.v,mute:!!t.m,solo:!!t.s,posicion:{x:t.x,y:t.y,z:t.z},metros:{x:t.x*SC,y:t.y*H,z:t.z*SC},automatizacion:t.auto.map(a=>({t:+a[0].toFixed(3),x:a[1],y:a[2],z:a[3]}))}))});
 const ready=()=>{if(!T.length){toast('Sube al menos un stem.');return false}$('#exp').classList.remove('open');pause();return true};
 $('#ex').onclick=()=>$('#exp').classList.toggle('open');
-$('#e1').onclick=async()=>{if(!ready())return;const d=await dlg();if(!d)return;toast('Renderizando mezcla binaural 24-bit…');try{const r=await renderMix();await d.save({filename:'mezcla_atmos_binaural.zip',data:zip([{name:'mezcla_binaural_24bit.wav',data:wav(r)},{name:'objetos_metadata.json',data:new TextEncoder().encode(JSON.stringify(metaObj(),null,2))}])});toast('Mezcla lista.')}catch(e){fail(e)}};
-$('#e3').onclick=async()=>{if(!ready())return;const d=await dlg();if(!d)return;try{await d.save({filename:'objetos_metadata.json',data:JSON.stringify(metaObj(),null,2)})}catch(e){fail(e)}};
-$('#e2').onclick=async()=>{if(!ready())return;const d=await dlg();if(!d)return;if(!window.MediaRecorder)return toast('Este navegador no puede grabar audio .webm.');try{toast('Renderizando…');const r=await renderMix();toast('Grabando .webm en tiempo real ('+fmt(r.duration).slice(0,-3)+'). No cierres la app.');
-const c2=new(window.AudioContext||window.webkitAudioContext)(),ds=c2.createMediaStreamDestination(),s=c2.createBufferSource(),ch=[],mt='audio/webm;codecs=opus',mr=new MediaRecorder(ds.stream,MediaRecorder.isTypeSupported(mt)?{mimeType:mt,audioBitsPerSecond:256000}:undefined);
-s.buffer=r;s.connect(ds);mr.ondataavailable=e=>e.data.size&&ch.push(e.data);mr.onstop=async()=>{c2.close();try{await d.save({filename:'mezcla_atmos_binaural.webm',data:new Blob(ch,{type:'audio/webm'})});toast('Mezcla lista.')}catch(e){fail(e)}};s.onended=()=>setTimeout(()=>mr.stop(),300);await c2.resume();mr.start();s.start()}catch(e){fail(e)}};
+
+$('#e1').onclick=async()=>{
+  if(!ready())return;
+  toast('Renderizando mezcla binaural 24-bit…');
+  try{
+    const r=await renderMix();
+    const zipBlob = zip([
+      {name:'mezcla_binaural_24bit.wav',data:wav(r)},
+      {name:'objetos_metadata.json',data:new TextEncoder().encode(JSON.stringify(metaObj(),null,2))}
+    ]);
+    downloadBlob(zipBlob, 'mezcla_atmos_binaural.zip');
+    toast('Descarga iniciada en tu carpeta de Descargas.');
+  }catch(e){fail(e)}
+};
+
+$('#e3').onclick=async()=>{
+  if(!ready())return;
+  try{
+    const jsonBlob = new Blob([JSON.stringify(metaObj(),null,2)], {type:'application/json'});
+    downloadBlob(jsonBlob, 'objetos_metadata.json');
+    toast('Descarga iniciada en tu carpeta de Descargas.');
+  }catch(e){fail(e)}
+};
+
+$('#e2').onclick=async()=>{
+  if(!ready())return;
+  if(!window.MediaRecorder)return toast('Este navegador no puede grabar audio .webm.');
+  try{
+    toast('Renderizando…');
+    const r=await renderMix();
+    toast('Grabando .webm en tiempo real ('+fmt(r.duration).slice(0,-3)+'). No cierres la app.');
+    const c2=new(window.AudioContext||window.webkitAudioContext)(),ds=c2.createMediaStreamDestination(),s=c2.createBufferSource(),ch=[],mt='audio/webm;codecs=opus',mr=new MediaRecorder(ds.stream,MediaRecorder.isTypeSupported(mt)?{mimeType:mt,audioBitsPerSecond:256000}:undefined);
+    s.buffer=r;s.connect(ds);mr.ondataavailable=e=>e.data.size&&ch.push(e.data);
+    mr.onstop=async()=>{
+      c2.close();
+      try{
+        const webmBlob = new Blob(ch,{type:'audio/webm'});
+        downloadBlob(webmBlob, 'mezcla_atmos_binaural.webm');
+        toast('Descarga iniciada.');
+      }catch(e){fail(e)}
+    };
+    s.onended=()=>setTimeout(()=>mr.stop(),300);
+    await c2.resume();mr.start();s.start();
+  }catch(e){fail(e)}
+};
 </script>
 </body></html>
