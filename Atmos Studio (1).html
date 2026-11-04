@@ -1,0 +1,150 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Atmos Studio</title>
+<style>
+:root{--bg:#f4f5f8;--pn:#fff;--bd:#d9dde6;--tx:#161a24;--mu:#667089;--ac:#0a84c6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0d12;--pn:#141821;--bd:#262c3a;--tx:#e6e9f0;--mu:#8b93a7;--ac:#4cc9f0}}
+:root[data-theme="dark"]{--bg:#0b0d12;--pn:#141821;--bd:#262c3a;--tx:#e6e9f0;--mu:#8b93a7;--ac:#4cc9f0}
+html,body{height:100%;margin:0}body{background:var(--bg);color:var(--tx);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header,footer{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--pn);border-bottom:1px solid var(--bd);flex-wrap:wrap}
+footer{border:0;border-top:1px solid var(--bd)}
+h1{font-size:15px;margin:0;letter-spacing:.14em}h1 span{color:var(--ac)}.tag{color:var(--mu);font-size:12px;flex:1}
+button,select{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font:inherit;cursor:pointer}
+button.a,button.pri{background:var(--ac);color:#fff;border-color:var(--ac)}button.rec.a{background:#e5384f;border-color:#e5384f}
+main{flex:1;display:flex;min-height:0}#stage{flex:1;position:relative;background:#0a0d14;min-width:0}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+#hud{position:absolute;top:8px;left:10px;color:#8b93a7;font-size:11px;pointer-events:none}
+#cam{position:absolute;bottom:8px;left:8px;width:120px;border-radius:8px;transform:scaleX(-1);display:none;border:1px solid #4cc9f0}
+aside{width:340px;background:var(--pn);border-left:1px solid var(--bd);display:flex;flex-direction:column;min-height:0}
+#tl{flex:1;overflow:auto}.tr{display:grid;grid-template-columns:12px 1fr auto auto auto;gap:6px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--bd);cursor:pointer}
+.tr.on{background:color-mix(in srgb,var(--ac) 14%,transparent)}.tr i{width:10px;height:10px;border-radius:50%}.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr button{padding:2px 7px;font-size:12px}.tr input{grid-column:2/5}.mt{grid-column:5;height:6px;background:var(--bd);border-radius:3px;position:relative;overflow:hidden}.mt u{position:absolute;inset:0 auto 0 0;background:var(--ac);width:0}
+.em{color:var(--mu);padding:16px;text-align:center}
+#insp{padding:10px 12px;border-top:1px solid var(--bd);display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center;font-size:12px;color:var(--mu)}
+#insp input,#sk{width:100%;accent-color:var(--ac)}#insp .row{grid-column:1/3;display:flex;gap:6px;flex-wrap:wrap}
+#tm{font-variant-numeric:tabular-nums;font-size:12px;color:var(--mu)}#sk{flex:1;min-width:100px}
+#mm{width:60px;height:8px;background:var(--bd);border-radius:4px;overflow:hidden}#mm u{display:block;height:100%;width:0;background:linear-gradient(90deg,#06d6a0,#ffd166,#e5384f)}
+#ts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom,0px));background:#000c;color:#fff;padding:8px 14px;border-radius:8px;display:none;max-width:90%;z-index:9}
+@media(max-width:760px){main{flex-direction:column}#stage{flex:none;height:40%}aside{width:auto;border:0;border-top:1px solid var(--bd);flex:1}}
+#exp{position:fixed;right:12px;bottom:calc(64px + env(safe-area-inset-bottom,0px));background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:12px;display:none;flex-direction:column;gap:8px;z-index:8;max-width:calc(100% - 24px);box-shadow:0 8px 30px #0006}#exp.open{display:flex}#exp button{text-align:left}#exp small,.dt{color:var(--mu);font-size:11px}.dt{grid-column:2/6}
+@media(pointer:coarse){button,select{min-height:44px;padding:8px 14px}.tr{padding:10px 12px}.tr button{min-height:38px;min-width:44px}input[type=range]{height:30px}header,footer{padding:8px 14px}}
+@media(min-width:761px) and (pointer:coarse){aside{width:390px}}
+</style></head><body>
+<header><h1>ATMOS<span>STUDIO</span></h1><span class="tag">Optimizado para tableta Android · objetos 3D · 7.1.4 · binaural HRTF</span><button id="add" class="pri">🎵 Biblioteca de audio</button><button id="add2">📁 Archivos</button><button id="demo">🧪 Demo 10 stems</button><button id="fs" title="Pantalla completa">⛶</button><input id="fi" type="file" multiple accept="audio/*,.wav,.mp3,.flac,.ogg,.opus,.m4a,.aac,.aif,.aiff,.wma" hidden><input id="fi2" type="file" multiple hidden></header>
+<main><section id="stage"><canvas id="cv"></canvas><div id="hud"></div><video id="cam" muted playsinline></video></section>
+<aside><div id="tl"></div><div id="insp"><span>X</span><input id="sx" type="range" min="-1" max="1" step=".01"><span>Altura</span><input id="sy" type="range" min="0" max="1" step=".01"><span>Z</span><input id="sz" type="range" min="-1" max="1" step=".01">
+<div class="row"><button id="rec" class="rec">● Grabar automación</button><button id="clr">Borrar auto.</button></div></div></aside></main>
+<footer><button id="pp" class="pri">▶</button><button id="st">■</button><span id="tm">0:00.00 / 0:00.00</span><input id="sk" type="range" min="0" max="1000" value="0"><div id="mm"><u></u></div>
+<button id="hand">✋ Mano</button><select id="ax"><option value="y">↑↓ = Altura</option><option value="z">↑↓ = Profundidad</option></select><button id="ex" class="pri">⬇ Descargar mezcla</button></footer><div id="exp"><b>Descargar mezcla</b><button id="e1">WAV 24-bit/48 kHz + metadata <small>(.zip, máxima calidad)</small></button><button id="e2">Audio reproducible <small>(.webm Opus, se graba en tiempo real)</small></button><button id="e3">Solo metadata de objetos <small>(.json)</small></button></div>
+<div id="ts"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),SC=5,H=4,COL=['#4cc9f0','#f72585','#ffd166','#06d6a0','#b388ff','#ff9f1c','#80ed99','#ff6b6b'],cl=(v,a=-1,b=1)=>Math.min(b,Math.max(a,v));
+let wl,AC,mg,an,T=[],sel=null,playing=false,t0=0,off=0,rec=false,drag=null,orb0=null,nid=0,lastRec=0,seeking=false,stm=null,prev=null,hx=32,hy=24,handOn=false,az=.6,el=.5,rd=15;
+const tb=new Uint8Array(512),lb=new Uint8Array(256);
+function toast(m){const e=$('#ts');e.textContent=m;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3500)}
+function init(){if(AC)return;AC=new(window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.gain.value=.9;an=AC.createAnalyser();an.fftSize=512;mg.connect(an);an.connect(AC.destination)}
+function mkP(c){const p=c.createPanner();p.panningModel='HRTF';p.distanceModel='inverse';p.refDistance=1.5;p.rolloffFactor=.5;return p}
+function setP(p,x,y,z,live){const a=x*SC,b=y*H,d=z*SC;if(p.positionX){if(live){const n=AC.currentTime;p.positionX.setTargetAtTime(a,n,.02);p.positionY.setTargetAtTime(b,n,.02);p.positionZ.setTargetAtTime(d,n,.02)}else{p.positionX.value=a;p.positionY.value=b;p.positionZ.value=d}}else p.setPosition(a,b,d)}
+const aud=t=>!t.m&&(!T.some(k=>k.s)||t.s),applyG=()=>T.forEach(t=>t.g.gain.setTargetAtTime(aud(t)?t.v:0,AC.currentTime,.01)),dur=()=>Math.max(0,...T.map(t=>t.buf.duration));
+const fmt=s=>Math.floor(s/60)+':'+(s%60).toFixed(2).padStart(5,'0'),esc=s=>s.replace(/[&<>"]/g,c=>'&#'+c.charCodeAt(0)+';');
+/* ---------- 3D ---------- */
+const cv=$('#cv'),R=new THREE.WebGLRenderer({canvas:cv,antialias:true}),sc=new THREE.Scene(),cm=new THREE.PerspectiveCamera(50,1,.1,100);
+R.setClearColor(0x0a0d14);sc.add(new THREE.AmbientLight(0xffffff,.6));const pl=new THREE.PointLight(0xffffff,.8);pl.position.set(0,8,4);sc.add(pl);
+const gr=new THREE.GridHelper(2*SC,10,0x4cc9f0,0x2a3550);gr.material.transparent=true;gr.material.opacity=.6;sc.add(gr);
+const bx=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(2*SC,H,2*SC)),new THREE.LineBasicMaterial({color:0x3a4663}));bx.position.y=H/2;sc.add(bx);
+[[0,0],[-30,0],[30,0],[-90,0],[90,0],[-135,0],[135,0],[-45,1],[45,1],[-135,1],[135,1]].forEach(([a,h])=>{const r=a*Math.PI/180,m=new THREE.Mesh(new THREE.BoxGeometry(.4,.4,.3),new THREE.MeshBasicMaterial({color:h?0x7a6cff:0x56607a}));m.position.set(Math.sin(r)*SC*.95,h?H*.92:.2,-Math.cos(r)*SC*.95);m.lookAt(0,m.position.y,0);sc.add(m)});
+const hd=new THREE.Mesh(new THREE.SphereGeometry(.25,16,12),new THREE.MeshBasicMaterial({color:0xdddddd}));const nz=new THREE.Mesh(new THREE.ConeGeometry(.1,.3,10),new THREE.MeshBasicMaterial({color:0xffd166}));nz.rotation.x=-Math.PI/2;nz.position.z=-.35;hd.add(nz);sc.add(hd);
+function orb(){cm.position.set(rd*Math.cos(el)*Math.sin(az),rd*Math.sin(el)+1.5,rd*Math.cos(el)*Math.cos(az));cm.lookAt(0,1.5,0)}orb();
+function size(){const r=$('#stage').getBoundingClientRect();R.setSize(r.width,r.height,false);cm.aspect=r.width/r.height;cm.updateProjectionMatrix()}new ResizeObserver(size).observe($('#stage'));
+function label(txt,c){const k=document.createElement('canvas');k.width=256;k.height=48;const g=k.getContext('2d');g.font='bold 26px system-ui';g.fillStyle=c;g.textAlign='center';g.fillText(txt.slice(0,16),128,32);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(k),transparent:true,depthTest:false}));s.scale.set(2.4,.45,1);return s}
+function moveMesh(t){const x=t.x*SC,y=t.y*H,z=t.z*SC;t.mesh.position.set(x,y,z);t.lb.position.set(x,y+.7,z);t.ln.geometry.setFromPoints([new THREE.Vector3(x,0,z),new THREE.Vector3(x,y,z)])}
+function setPos(t,x,y,z){if(x!=null)t.x=x;if(y!=null)t.y=y;if(z!=null)t.z=z;setP(t.p,t.x,t.y,t.z,true);moveMesh(t);if(t===sel)sync()}
+function sync(){if(!sel)return;$('#sx').value=sel.x;$('#sy').value=sel.y;$('#sz').value=sel.z}
+const rc=new THREE.Raycaster(),mv=new THREE.Vector2();
+function ray(e){const r=cv.getBoundingClientRect();mv.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);rc.setFromCamera(mv,cm)}
+const ptrs=new Map();let pd=1;const pdist=()=>{const[a,b]=[...ptrs.values()];return Math.hypot(a.x-b.x,a.y-b.y)||1};
+cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});if(ptrs.size===2){drag=null;orb0=null;pd=pdist();return}if(ptrs.size>2)return;ray(e);const h=rc.intersectObjects(T.map(t=>t.mesh))[0];if(h){const t=T.find(k=>k.mesh===h.object);select(t);drag={t,pl:new THREE.Plane(new THREE.Vector3(0,1,0),-t.mesh.position.y)}}else orb0={x:e.clientX,y:e.clientY}};
+cv.onpointermove=e=>{if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});if(ptrs.size===2){const n=pdist();rd=cl(rd*pd/n,6,30);pd=n;orb();return}if(drag){ray(e);const p=new THREE.Vector3();if(rc.ray.intersectPlane(drag.pl,p))setPos(drag.t,cl(p.x/SC),null,cl(p.z/SC))}else if(orb0){az-=(e.clientX-orb0.x)*.008;el=cl(el+(e.clientY-orb0.y)*.006,.05,1.45);orb0={x:e.clientX,y:e.clientY};orb()}};
+cv.onpointerup=cv.onpointercancel=e=>{ptrs.delete(e.pointerId);drag=null;orb0=null};cv.oncontextmenu=e=>e.preventDefault();cv.onwheel=e=>{e.preventDefault();rd=cl(rd+e.deltaY*.01,6,30);orb()};
+$('#fs').onclick=()=>{try{(document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()).catch(()=>toast('Pantalla completa no disponible aquí.'))}catch(_){toast('Pantalla completa no disponible aquí.')}};
+
+/* ---------- pistas ---------- */
+function addTrack(name,buf){const i=T.length,a=i*.9,t={id:nid++,name,buf,v:1,m:0,s:0,x:Math.sin(a)*.8,y:.3,z:-Math.cos(a)*.8,auto:[],c:COL[i%8]};
+t.g=AC.createGain();t.p=mkP(AC);t.an=AC.createAnalyser();t.an.fftSize=256;t.g.connect(t.an);t.g.connect(t.p);t.p.connect(mg);
+t.mesh=new THREE.Mesh(new THREE.SphereGeometry(.4,24,16),new THREE.MeshStandardMaterial({color:t.c,emissive:t.c,emissiveIntensity:.3}));t.lb=label(name,t.c);t.ln=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:t.c,transparent:true,opacity:.5}));
+sc.add(t.mesh,t.lb,t.ln);T.push(t);setP(t.p,t.x,t.y,t.z);moveMesh(t);if(playing)startSrc(t,AC.currentTime-t0);sel=sel||t;applyG();renderTL();sync()}
+function startSrc(t,o){const s=AC.createBufferSource();s.buffer=t.buf;s.connect(t.g);if(o<t.buf.duration)s.start(0,o);t.src=s}
+function select(t){sel=t;renderTL();sync()}
+function renderTL(){$('#tl').innerHTML=T.map(t=>`<div class="tr${t===sel?' on':''}" data-i="${t.id}"><i style="background:${t.c}"></i><span class="nm">${esc(t.name)}</span><button data-a="m" class="${t.m?'a':''}">M</button><button data-a="s" class="${t.s?'a':''}">S</button><button data-a="x">✕</button><input data-a="v" type="range" min="0" max="1.5" step=".01" value="${t.v}"><span class="mt"><u id="m${t.id}"></u></span><small class="dt">${fmt(t.buf.duration).slice(0,-3)} · ${t.buf.sampleRate/1000} kHz · ${t.buf.numberOfChannels>1?"estéreo":"mono"}</small></div>`).join('')||'<p class="em">Agrega tus stems desde la biblioteca de audio o desde Archivos (puedes marcar 10 o más a la vez). También puedes probar con 🧪 Demo 10 stems.<br><br><button class="pri" id="e0">🎵 Biblioteca de audio</button></p>'}
+$('#tl').onclick=e=>{if(e.target.id==='e0')return $('#fi').click();const r=e.target.closest('.tr');if(!r)return;const t=T.find(k=>k.id==r.dataset.i),a=e.target.dataset.a;if(a==='m')t.m^=1;else if(a==='s')t.s^=1;else if(a==='x'){try{t.src&&t.src.stop()}catch(_){}t.g.disconnect();t.p.disconnect();sc.remove(t.mesh,t.lb,t.ln);T=T.filter(k=>k!==t);if(sel===t)sel=T[0]||null}else if(a==='v')return;else sel=t;applyG();renderTL();sync()};
+$('#tl').oninput=e=>{if(e.target.dataset.a==='v'){const t=T.find(k=>k.id==e.target.closest('.tr').dataset.i);t.v=+e.target.value;applyG()}};
+['sx','sy','sz'].forEach(k=>$('#'+k).oninput=e=>{if(!sel)return;const v=+e.target.value;setPos(sel,k==='sx'?v:null,k==='sy'?v:null,k==='sz'?v:null)});
+async function load(fs){if(!fs.length)return;init();let ok=0;for(let i=0;i<fs.length;i++){toast('Cargando '+(i+1)+' de '+fs.length+': '+fs[i].name);try{addTrack(fs[i].name.replace(/\.[^.]+$/,''),await AC.decodeAudioData(await fs[i].arrayBuffer()));ok++}catch(_){toast('No se pudo decodificar: '+fs[i].name);await new Promise(r=>setTimeout(r,900))}}toast(ok+' de '+fs.length+' stems cargados. Toca una esfera y muévela.')}
+/* demo: 10 stems sintetizados */
+async function demo(){init();await AC.resume();const sr=44100,len=sr*16,nz=()=>Math.random()*2-1,P=Math.PI*2;
+const mk=(n,fn)=>{const b=AC.createBuffer(1,len,sr),d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=fn(i/sr,i);addTrack(n,b)};let pv=0,lp=0;
+const N=[[55,55,73.4,65.4],[440,523,587,659,784]];
+mk('Kick',t=>{const u=t%.5;return Math.sin(P*(55*u+3*(1-Math.exp(-30*u))))*Math.exp(-u*8)*.9});
+mk('Snare',t=>{const u=(t%1)-.5;return u<0?0:(nz()*Math.exp(-u*20)*.5+Math.sin(P*180*u)*Math.exp(-u*25)*.3)});
+mk('Hi-hat',t=>{const u=t%.25,n=nz(),r=(n-pv)*.5;pv=n;return r*Math.exp(-u*60)*.4});
+mk('Bajo',t=>{const f=N[0][Math.floor(t/.5)%4],u=t%.5;return(Math.sin(P*f*t)+.4*Math.sin(P*f*2*t))*Math.exp(-u*2.5)*.5});
+mk('Pad',t=>(Math.sin(P*220*t)+Math.sin(P*277.2*t)+Math.sin(P*329.6*t))*.1*(.6+.4*Math.sin(P*t/8)));
+mk('Lead',t=>{const f=N[1][Math.floor(t/.25)*3%5],u=t%.25;return(Math.sin(P*f*t)+.3*Math.sin(P*f*3*t))*Math.exp(-u*6)*.35});
+mk('Arpegio',t=>{const f=N[1][Math.floor(t/.125)*2%5]*2,u=t%.125;return Math.asin(Math.sin(P*f*t))*.6*Math.exp(-u*14)*.3});
+mk('Conga',t=>{const u=t%.75;return Math.sin(P*(220-60*u)*u)*Math.exp(-u*15)*.5});
+mk('Coros',t=>{lp+=(nz()-lp)*.04;return lp*(.5+.5*Math.sin(P*t/4))*1.2});
+mk('FX barrido',t=>{const f=300+2700*((t%8)/8);return Math.sin(P*f*t)*.15*(.5+.5*Math.sin(P*6*t))});
+select(T[T.length-10]);play()}
+$('#demo').onclick=demo;
+$('#add').onclick=()=>$('#fi').click();$('#add2').onclick=()=>$('#fi2').click();['fi','fi2'].forEach(k=>$('#'+k).onchange=e=>{load([...e.target.files]);e.target.value=''});
+document.ondragover=e=>e.preventDefault();document.ondrop=e=>{e.preventDefault();load([...e.dataTransfer.files].filter(f=>f.type.startsWith('audio')||/\.(wav|mp3|flac|ogg|m4a|aac|aif|aiff)$/i.test(f.name)))};
+/* ---------- transporte ---------- */
+async function play(){init();await AC.resume();if(playing||!T.length)return;if(off>=dur())off=0;T.forEach(t=>startSrc(t,off));t0=AC.currentTime-off;playing=true;applyG();ui();try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(w=>wl=w).catch(()=>{})}catch(_){}}
+function pause(){if(!playing)return;off=AC.currentTime-t0;T.forEach(t=>{try{t.src.stop()}catch(_){}});playing=false;rec=false;ui();try{wl&&wl.release();wl=null}catch(_){}}
+function stop(){pause();off=0;rec=false;ui()}
+function ui(){$('#pp').textContent=playing?'❚❚':'▶';$('#rec').classList.toggle('a',rec);$('#hand').classList.toggle('a',!!stm)}
+$('#pp').onclick=()=>playing?pause():play();$('#st').onclick=stop;
+$('#sk').onpointerdown=()=>seeking=true;$('#sk').onchange=e=>{const w=playing;if(w)pause();off=e.target.value/1000*dur();seeking=false;if(w)play()};
+$('#rec').onclick=async()=>{if(!sel)return;if(rec){rec=false;ui();return}await play();if(!playing)return;const n=AC.currentTime-t0;sel.auto=sel.auto.filter(a=>a[0]<n);rec=true;ui();toast('Grabando movimiento de “'+sel.name+'”. Muévelo con la mano, el ratón o los deslizadores.')};
+$('#clr').onclick=()=>{if(sel)sel.auto=[]};
+/* ---------- mano (detección de movimiento por cámara) ---------- */
+const vid=$('#cam'),cc=document.createElement('canvas');cc.width=64;cc.height=48;const cx=cc.getContext('2d',{willReadFrequently:true});
+$('#hand').onclick=async()=>{if(stm){stm.getTracks().forEach(k=>k.stop());stm=null;vid.style.display='none';handOn=false;ui();return}
+try{stm=await navigator.mediaDevices.getUserMedia({video:{width:320,height:240,facingMode:'user'}});vid.srcObject=stm;await vid.play();vid.style.display='block';prev=null;toast('Selecciona un stem y mueve la mano frente a la cámara (fondo estático, buena luz).')}catch(_){stm=null;toast('No hay acceso a la cámara en este entorno. Usa arrastrar en 3D o los deslizadores.')}ui()};
+function track(){if(!stm||!sel||vid.readyState<2){handOn=false;return}cx.drawImage(vid,0,0,64,48);const d=cx.getImageData(0,0,64,48).data,g=new Uint8Array(3072);let sx=0,sy=0,n=0;
+for(let i=0;i<3072;i++){g[i]=(d[i*4]+d[i*4+1]+d[i*4+2])/3;if(prev&&Math.abs(g[i]-prev[i])>28){sx+=i%64;sy+=i>>6;n++}}prev=g;handOn=n>14;if(!handOn)return;
+hx+=(sx/n-hx)*.4;hy+=(sy/n-hy)*.4;const x=cl(1-hx/32);$('#ax').value==='y'?setPos(sel,x,cl(1-hy/48,0,1),null):setPos(sel,x,null,cl(hy/24-1))}
+/* ---------- bucle ---------- */
+function loop(){requestAnimationFrame(loop);const d=dur();let now=off;if(AC&&playing){now=AC.currentTime-t0;if(now>=d){stop();now=0}}
+$('#tm').textContent=fmt(now)+' / '+fmt(d);if(!seeking)$('#sk').value=d?now/d*1000:0;track();
+T.forEach(t=>{const act=(rec&&t===sel)||(drag&&drag.t===t)||(handOn&&t===sel);
+if(playing&&!act&&t.auto.length){const a=t.auto;let i=a.findIndex(k=>k[0]>now),p;if(i<0)p=a[a.length-1];else if(i===0)p=a[0];else{const u=a[i-1],v=a[i],f=(now-u[0])/(v[0]-u[0]||1);p=[0,u[1]+(v[1]-u[1])*f,u[2]+(v[2]-u[2])*f,u[3]+(v[3]-u[3])*f]}setPos(t,p[1],p[2],p[3])}
+if(rec&&t===sel&&now-lastRec>.05){t.auto.push([now,t.x,t.y,t.z]);lastRec=now}
+let l=0;if(playing){t.an.getByteTimeDomainData(lb);for(let i=0;i<256;i++)l=Math.max(l,Math.abs(lb[i]-128));l=Math.min(1,l/90)}
+t.mesh.scale.setScalar(1+l*.7);t.mesh.material.emissiveIntensity=t===sel?.9:.25+l*.5;const m=$('#m'+t.id);if(m)m.style.width=l*100+'%'});
+let p=0;if(an&&playing){an.getByteTimeDomainData(tb);for(let i=0;i<512;i++)p=Math.max(p,Math.abs(tb[i]-128));}$('#mm u').style.width=Math.min(100,p/1.2)+'%';
+$('#hud').textContent=(handOn?'✋ mano detectada · ':'')+'Arrastra esferas · fondo = orbitar · pellizca/rueda = zoom · Cubos azules = altavoces 7.1.4 (violeta = altura)';R.render(sc,cm)}
+loop();renderTL();ui();size();
+/* ---------- exportación ---------- */
+function wav(b){const n=b.length,o=new DataView(new ArrayBuffer(44+n*6)),w=(p,s)=>[...s].forEach((c,i)=>o.setUint8(p+i,c.charCodeAt(0)));w(0,'RIFF');o.setUint32(4,36+n*6,true);w(8,'WAVEfmt ');o.setUint32(16,16,true);o.setUint16(20,1,true);o.setUint16(22,2,true);o.setUint32(24,b.sampleRate,true);o.setUint32(28,b.sampleRate*6,true);o.setUint16(32,6,true);o.setUint16(34,24,true);w(36,'data');o.setUint32(40,n*6,true);
+const c=[b.getChannelData(0),b.getChannelData(1)];let q=44;for(let i=0;i<n;i++)for(let k=0;k<2;k++){const v=Math.round(cl(c[k][i])*8388607);o.setUint8(q++,v&255);o.setUint8(q++,(v>>8)&255);o.setUint8(q++,(v>>16)&255)}return new Uint8Array(o.buffer)}
+function crc(u){const t=crc.t||(crc.t=Array.from({length:256},(_,n)=>{let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;return c>>>0}));let r=-1;for(let i=0;i<u.length;i++)r=(r>>>8)^t[(r^u[i])&255];return(r^-1)>>>0}
+function zip(fs){const P=[],C=[],e=new TextEncoder();let off=0;for(const f of fs){const nm=e.encode(f.name),k=crc(f.data),z=f.data.length,h=new DataView(new ArrayBuffer(30)),c=new DataView(new ArrayBuffer(46));
+h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x800,true);h.setUint32(14,k,true);h.setUint32(18,z,true);h.setUint32(22,z,true);h.setUint16(26,nm.length,true);P.push(h,nm,f.data);
+c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x800,true);c.setUint32(16,k,true);c.setUint32(20,z,true);c.setUint32(24,z,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);C.push(c,nm);off+=30+nm.length+z}
+let L=0;C.forEach(x=>L+=x.byteLength);const E=new DataView(new ArrayBuffer(22));E.setUint32(0,0x06054b50,true);E.setUint16(8,fs.length,true);E.setUint16(10,fs.length,true);E.setUint32(12,L,true);E.setUint32(16,off,true);return new Blob([...P,...C,E])}
+const fail=e=>toast(e&&e.code==='declined'?'Descarga cancelada.':'Error al exportar: '+(e&&e.message||e));
+async function dlg(){const d=window.claude?await claude.use('downloads'):null;if(!d)toast('La descarga no está disponible en esta vista.');return d}
+async function renderMix(){const sr=48000,oc=new OfflineAudioContext(2,Math.ceil(dur()*sr),sr),m=oc.createGain();m.gain.value=.9;m.connect(oc.destination);
+T.forEach(t=>{const s=oc.createBufferSource(),g=oc.createGain(),p=mkP(oc);s.buffer=t.buf;g.gain.value=aud(t)?t.v:0;const a=t.auto;setP(p,a.length?a[0][1]:t.x,a.length?a[0][2]:t.y,a.length?a[0][3]:t.z);
+if(p.positionX)a.forEach(k=>{p.positionX.setValueAtTime(k[1]*SC,k[0]);p.positionY.setValueAtTime(k[2]*H,k[0]);p.positionZ.setValueAtTime(k[3]*SC,k[0])});s.connect(g);g.connect(p);p.connect(m);s.start()});
+const r=await oc.startRendering();let pk=0;for(let c=0;c<2;c++){const d=r.getChannelData(c);for(let i=0;i<d.length;i++)pk=Math.max(pk,Math.abs(d[i]))}if(pk>.98){const f=.98/pk;for(let c=0;c<2;c++){const d=r.getChannelData(c);for(let i=0;i<d.length;i++)d[i]*=f}}return r}
+const metaObj=()=>({generador:'Atmos Studio',nota:'Metadata de objetos estilo ADM (no es un master Dolby Atmos certificado). Úsala para reconstruir la mezcla en un DAW o en el Dolby Atmos Renderer.',ejes:'x derecha, y arriba, z atrás (frente = -z); metros: x,z ±5, altura 0–4',monitorizacion:'7.1.4 / binaural HRTF',sampleRate:48000,bits:24,objetos:T.map((t,i)=>({id:i+1,nombre:t.name,ganancia:t.v,mute:!!t.m,solo:!!t.s,posicion:{x:t.x,y:t.y,z:t.z},metros:{x:t.x*SC,y:t.y*H,z:t.z*SC},automatizacion:t.auto.map(a=>({t:+a[0].toFixed(3),x:a[1],y:a[2],z:a[3]}))}))});
+const ready=()=>{if(!T.length){toast('Sube al menos un stem.');return false}$('#exp').classList.remove('open');pause();return true};
+$('#ex').onclick=()=>$('#exp').classList.toggle('open');
+$('#e1').onclick=async()=>{if(!ready())return;const d=await dlg();if(!d)return;toast('Renderizando mezcla binaural 24-bit…');try{const r=await renderMix();await d.save({filename:'mezcla_atmos_binaural.zip',data:zip([{name:'mezcla_binaural_24bit.wav',data:wav(r)},{name:'objetos_metadata.json',data:new TextEncoder().encode(JSON.stringify(metaObj(),null,2))}])});toast('Mezcla lista.')}catch(e){fail(e)}};
+$('#e3').onclick=async()=>{if(!ready())return;const d=await dlg();if(!d)return;try{await d.save({filename:'objetos_metadata.json',data:JSON.stringify(metaObj(),null,2)})}catch(e){fail(e)}};
+$('#e2').onclick=async()=>{if(!ready())return;const d=await dlg();if(!d)return;if(!window.MediaRecorder)return toast('Este navegador no puede grabar audio .webm.');try{toast('Renderizando…');const r=await renderMix();toast('Grabando .webm en tiempo real ('+fmt(r.duration).slice(0,-3)+'). No cierres la app.');
+const c2=new(window.AudioContext||window.webkitAudioContext)(),ds=c2.createMediaStreamDestination(),s=c2.createBufferSource(),ch=[],mt='audio/webm;codecs=opus',mr=new MediaRecorder(ds.stream,MediaRecorder.isTypeSupported(mt)?{mimeType:mt,audioBitsPerSecond:256000}:undefined);
+s.buffer=r;s.connect(ds);mr.ondataavailable=e=>e.data.size&&ch.push(e.data);mr.onstop=async()=>{c2.close();try{await d.save({filename:'mezcla_atmos_binaural.webm',data:new Blob(ch,{type:'audio/webm'})});toast('Mezcla lista.')}catch(e){fail(e)}};s.onended=()=>setTimeout(()=>mr.stop(),300);await c2.resume();mr.start();s.start()}catch(e){fail(e)}};
+</script>
+</body></html>
